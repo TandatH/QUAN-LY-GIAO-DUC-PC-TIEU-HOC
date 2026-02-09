@@ -1859,7 +1859,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                             ` : '<p style="color:#94a3b8; margin-top:15px">Chưa có giao dịch tài chính nào</p>'}
                         </div>
 
-                        <!-- Phản hồi từ giáo viên -->
+
+                        <!-- Thời khóa biểu -->
+                        <div class="card">
+                            <h3><i class="fas fa-calendar-alt"></i> Thời khóa biểu lớp ${student.classRoom || student.class}</h3>
+                            <div id="parent-timetable-container" style="margin-top:15px"></div>
+                        </div>
+
+                                                <!-- Phản hồi từ giáo viên -->
                         <div class="card">
                             <h3><i class="fas fa-comments"></i> Phản hồi từ giáo viên</h3>
                             ${feedbacks.length > 0 ? `
@@ -1885,6 +1892,60 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                             ` : '<p style="color:#94a3b8; margin-top:15px">Chưa có phản hồi nào từ giáo viên</p>'}
                         </div>
                     `;
+                    
+                    // Render timetable for parent
+                    const studentClass = student.classRoom || student.class;
+                    if (studentClass) {
+                        // Use setTimeout to ensure DOM is ready
+                        setTimeout(() => {
+                            const timetableContainer = document.getElementById('parent-timetable-container');
+                            if (timetableContainer) {
+                                const timetableData = window.localData.timetables[studentClass] || {};
+                                const grade = studentClass.charAt(0);
+                                const subjects = window.PRIMARY_SUBJECTS[grade] || [];
+                                
+                                // Get periods
+                                const morningPeriods = window.TIMETABLE_PERIODS.morning || window.DEFAULT_PERIODS.morning;
+                                const afternoonPeriods = window.TIMETABLE_PERIODS.afternoon || window.DEFAULT_PERIODS.afternoon;
+                                const allPeriods = [...morningPeriods, ...afternoonPeriods];
+                                
+                                const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+                                
+                                let html = '<div class="timetable-container"><div class="timetable-grid">';
+                                
+                                // Header row
+                                html += '<div class="timetable-header"></div>';
+                                days.forEach(day => {
+                                    html += `<div class="timetable-header">${day}</div>`;
+                                });
+                                
+                                // Time slots
+                                allPeriods.forEach((period, pIndex) => {
+                                    html += `<div class="timetable-time">${period.name}<br><small>${period.time}</small></div>`;
+                                    
+                                    days.forEach((day, dIndex) => {
+                                        const slotKey = `d${dIndex}_p${pIndex}`;
+                                        const slot = timetableData[slotKey] || {};
+                                        
+                                        if (slot.subject) {
+                                            html += `
+                                                <div class="timetable-cell">
+                                                    <div class="timetable-subject">${slot.subject}</div>
+                                                    ${slot.teacher ? `<div class="timetable-teacher">${slot.teacher}</div>` : ''}
+                                                    ${slot.room ? `<div class="timetable-teacher">Phòng: ${slot.room}</div>` : ''}
+                                                </div>
+                                            `;
+                                        } else {
+                                            html += '<div class="timetable-cell"><span class="empty-slot">---</span></div>';
+                                        }
+                                    });
+                                });
+                                
+                                html += '</div></div>';
+                                timetableContainer.innerHTML = html;
+                            }
+                        }, 100);
+                    }
                 });
             });
         }
