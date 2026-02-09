@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart School Pro - Hệ Thống Quản Lý Giáo Dục</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2 style="color:#1e293b; margin-bottom:5px"><i class="fas fa-school"></i> Smart School</h2>
+            <p style="color:#64748b; margin-bottom:20px">Hệ thống quản lý giáo dục</p>
+
+            <div id="form-login">
+                <h3 style="margin-bottom:15px; color:var(--primary)">Đăng Nhập</h3>
+                <input type="email" id="login-email" class="auth-inp" placeholder="Email">
+                <input type="password" id="login-pass" class="auth-inp" placeholder="Mật khẩu">
+                <button class="btn-auth" onclick="handleLogin()">Đăng Nhập</button>
+                <div style="margin-top:15px; font-size:0.9rem;">
+                    Chưa có tài khoản? <a href="#" style="color:var(--primary); font-weight:600" onclick="toggleAuthMode('register'); return false;">Đăng ký ngay</a>
+                </div>
+            </div>
+
+            <div id="form-register" class="hidden">
+                <h3 style="margin-bottom:15px; color:var(--success)">Đăng Ký Mới</h3>
+                <input type="email" id="reg-email" class="auth-inp" placeholder="Email đăng ký">
+                <input type="password" id="reg-pass" class="auth-inp" placeholder="Mật khẩu (min 6 ký tự)">
+                
+                <select id="reg-role" class="auth-inp" onchange="toggleRegFields()">
+                    <option value="" disabled selected>-- Chọn vai trò --</option>
+                    <option value="parent">Phụ huynh</option>
+                    <option value="teacher">Giáo viên</option>
+                    <option value="admin">Quản trị viên (Admin)</option>
+                </select>
+
+                <div id="reg-extra-fields">
+                    <input type="text" id="reg-class" class="auth-inp hidden" placeholder="Lớp phụ trách (VD: 1A)">
+                    <input type="text" id="reg-student-id" class="auth-inp hidden" placeholder="Mã học sinh của con (VD: HS123)">
+                </div>
+
+                <button class="btn-auth" style="background:var(--success)" onclick="handleRegister()">Tạo Tài Khoản</button>
+                <div style="margin-top:15px; font-size:0.9rem;">
+                    Đã có tài khoản? <a href="#" style="color:var(--primary); font-weight:600" onclick="toggleAuthMode('login'); return false;">Quay lại đăng nhập</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-container" class="hidden">
+        <aside class="sidebar">
+            <div class="brand"><i class="fas fa-graduation-cap"></i> Smart School</div>
+            <nav class="menu" id="main-menu">
+                <!-- Dynamic menu based on role -->
+            </nav>
+            <div style="padding:1rem; border-top:1px solid #334155">
+                <button class="btn btn-danger" style="width:100%" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="top-bar">
+                <h2 id="page-title">Dashboard</h2>
+                <div style="display:flex; align-items:center; gap:15px">
+                    <span id="user-info"></span>
+                </div>
+            </div>
+
+            <div class="content-area" id="content">
+                <!-- Dynamic content -->
+            </div>
+        </main>
+    </div>
+
+
+    <!-- MODAL: TIMETABLE EDIT -->
+    <div id="modal-timetable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-alt"></i> Chỉnh sửa tiết học</h3>
+                <button class="btn btn-outline" onclick="closeModal('modal-timetable')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="timetable-form" onsubmit="saveTimetableSlot(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Môn học</label>
+                            <select name="subject" class="form-control" id="timetable-subject" required>
+                                <option value="">-- Chọn môn --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Giáo viên</label>
+                            <input type="text" name="teacher" class="form-control" placeholder="Tên giáo viên">
+                        </div>
+                        <div class="form-group">
+                            <label>Phòng học</label>
+                            <input type="text" name="room" class="form-control" placeholder="VD: P101">
+                        </div>
+                    </div>
+                    <div style="text-align:right; margin-top:20px">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-timetable')">Hủy</button>
+                        <button type="button" class="btn btn-danger" onclick="clearTimetableSlot()">
+                            <i class="fas fa-trash"></i> Xóa tiết
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Lưu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SCHEDULE SETTINGS -->
+    <div id="modal-schedule-settings" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-clock"></i> Cài đặt Thời gian Tiết học</h3>
+                <button class="btn btn-outline" onclick="closeModal('modal-schedule-settings')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                    <strong>📌 Lưu ý:</strong> Thay đổi sẽ áp dụng cho tất cả các lớp. Định dạng thời gian: HH:MM-HH:MM (VD: 7:30-8:10)
+                </div>
+                
+                <div class="form-section">
+                    <h4>⛅ Buổi Sáng</h4>
+                    <div id="morning-periods-container"></div>
+                    <button type="button" class="btn btn-sm btn-success" onclick="addPeriod('morning')" style="margin-top:10px">
+                        <i class="fas fa-plus"></i> Thêm tiết
+                    </button>
+                </div>
+                
+                <div class="form-section">
+                    <h4>🌙 Buổi Chiều</h4>
+                    <div id="afternoon-periods-container"></div>
+                    <button type="button" class="btn btn-sm btn-success" onclick="addPeriod('afternoon')" style="margin-top:10px">
+                        <i class="fas fa-plus"></i> Thêm tiết
+                    </button>
+                </div>
+                
+                <div style="text-align:right; margin-top:25px; padding-top:20px; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-schedule-settings')">Hủy</button>
+                    <button type="button" class="btn btn-warning" onclick="resetDefaultSchedule()">
+                        <i class="fas fa-undo"></i> Khôi phục mặc định
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveScheduleSettings()">
+                        <i class="fas fa-save"></i> Lưu cài đặt
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="modal-student" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> <span id="modal-student-title">Thêm Học Sinh</span></h3>
+                <button class="btn btn-outline" onclick="closeModal('modal-student')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="student-form" onsubmit="saveStudent(event)">
+                    <div class="form-section">
+                        <h4>Thông tin cơ bản</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Mã học sinh *</label>
+                                <input type="text" name="code" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Họ và tên *</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Lớp *</label>
+                                <input type="text" name="classRoom" class="form-control" placeholder="VD: 1A, 2B" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Giới tính</label>
+                                <select name="gender" class="form-control">
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ngày sinh</label>
+                                <input type="date" name="dob" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Trạng thái *</label>
+                                <select name="status" class="form-control" required>
+                                    <option value="active">Đang học</option>
+                                    <option value="leave">Nghỉ học</option>
+                                    <option value="reserved">Bảo lưu</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>SĐT Khẩn cấp</label>
+                                <input type="tel" name="sosPhone" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Thông tin Phụ huynh</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Họ tên Cha</label>
+                                <input type="text" name="dadName" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>SĐT Cha</label>
+                                <input type="tel" name="dadPhone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Họ tên Mẹ</label>
+                                <input type="text" name="momName" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>SĐT Mẹ</label>
+                                <input type="tel" name="momPhone" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align:right; margin-top:20px">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-student')">Hủy</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Lưu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-finance" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-money-bill-wave"></i> <span id="modal-finance-title">Thêm Khoản Thu/Chi</span></h3>
+                <button class="btn btn-outline" onclick="closeModal('modal-finance')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="finance-form" onsubmit="saveFinance(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Loại giao dịch *</label>
+                            <select name="type" class="form-control" required onchange="toggleFinanceCategory()">
+                                <option value="income">Thu</option>
+                                <option value="expense">Chi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Danh mục *</label>
+                            <select name="category" class="form-control" required id="finance-category">
+                                <optgroup label="Thu">
+                                    <option value="tuition">Học phí</option>
+                                    <option value="exam_fee">Phí thi</option>
+                                    <option value="uniform">Đồng phục</option>
+                                    <option value="meal">Tiền ăn</option>
+                                    <option value="other_income">Thu khác</option>
+                                </optgroup>
+                                <optgroup label="Chi">
+                                    <option value="salary">Lương</option>
+                                    <option value="utility">Điện nước</option>
+                                    <option value="maintenance">Bảo trì</option>
+                                    <option value="supplies">Văn phòng phẩm</option>
+                                    <option value="other_expense">Chi khác</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Số tiền (VNĐ) *</label>
+                            <input type="number" name="amount" class="form-control" required min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày giao dịch *</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mã học sinh (nếu có)</label>
+                            <input type="text" name="studentCode" class="form-control" placeholder="VD: HS001">
+                        </div>
+                        <div class="form-group">
+                            <label>Phương thức thanh toán</label>
+                            <select name="paymentMethod" class="form-control">
+                                <option value="cash">Tiền mặt</option>
+                                <option value="bank">Chuyển khoản</option>
+                                <option value="card">Thẻ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="custom-income-field" style="display:none">
+                        <label>Nội dung thu *</label>
+                        <input type="text" name="customIncome" class="form-control" placeholder="Nhập nội dung khoản thu">
+                    </div>
+                    <div class="form-group">
+                        <label>Ghi chú</label>
+                        <textarea name="note" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div style="text-align:right; margin-top:20px">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-finance')">Hủy</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Lưu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-score" class="modal">
+        <div class="modal-content" style="max-width: 1400px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Nhập Điểm - <span id="score-student-name"></span></h3>
+                <button class="btn btn-outline" onclick="closeModal('modal-score')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:20px">
+                    <label style="font-weight:600; margin-right:10px">Chọn Học kỳ:</label>
+                    <select id="score-semester" class="custom-select" onchange="loadScoreForm()">
+                        <option value="1">Học kỳ 1</option>
+                        <option value="2">Học kỳ 2</option>
+                    </select>
+                </div>
+                <div id="score-form-container"></div>
+                <div style="text-align:right; margin-top:20px">
+                    <button class="btn btn-outline" onclick="closeModal('modal-score')">Hủy</button>
+                    <button class="btn btn-success" onclick="saveScores()">
+                        <i class="fas fa-save"></i> Lưu điểm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase & App Script -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

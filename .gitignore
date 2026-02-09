@@ -1,0 +1,41 @@
+# Node modules (nếu dùng npm)
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build files (nếu có)
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Firebase cache
+.firebase/
+firebase-debug.log
+
+# Backup files
+*.bak
+*.backup
+*_old.*
