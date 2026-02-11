@@ -94,7 +94,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         // Load menu based on role
         function loadMenu() {
             const menuItems = {
-                                'admin': [
+                'admin': [
                     { id: 'dashboard', icon: 'chart-line', text: 'Dashboard' },
                     { id: 'students', icon: 'user-graduate', text: 'Quản lý Học sinh' },
                     { id: 'timetable', icon: 'calendar-alt', text: 'Thời khóa biểu' },
@@ -103,7 +103,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                     { id: 'finance', icon: 'dollar-sign', text: 'Quản lý Tài chính' },
                     { id: 'users', icon: 'users-cog', text: 'Quản lý Users' }
                 ],
-                                'teacher': [
+                'teacher': [
                     { id: 'dashboard', icon: 'chart-line', text: 'Dashboard' },
                     { id: 'students', icon: 'user-graduate', text: 'Học sinh lớp mình' },
                     { id: 'timetable', icon: 'calendar-alt', text: 'Thời khóa biểu' },
@@ -111,7 +111,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                     { id: 'scores', icon: 'star', text: 'Quản lý Điểm' },
                     { id: 'finance', icon: 'dollar-sign', text: 'Danh sách đóng tiền' }
                 ],
-                                'parent': [
+                'parent': [
                     { id: 'dashboard', icon: 'chart-line', text: 'Dashboard' },
                     { id: 'child-info', icon: 'user', text: 'Thông tin con' },
                     { id: 'timetable', icon: 'calendar-alt', text: 'Thời khóa biểu' }
@@ -166,19 +166,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 
         // AUTH FUNCTIONS
         window.toggleAuthMode = (mode) => {
-            if (mode === 'register') {
-                document.getElementById('form-login').classList.add('hidden');
-                document.getElementById('form-register').classList.remove('hidden');
-            } else {
-                document.getElementById('form-login').classList.remove('hidden');
-                document.getElementById('form-register').classList.add('hidden');
-            }
+            // Kept for compatibility but register is admin-only now
         }
 
         window.toggleRegFields = () => {
-            const role = document.getElementById('reg-role').value;
-            document.getElementById('reg-class').classList.toggle('hidden', role !== 'teacher');
-            document.getElementById('reg-student-id').classList.toggle('hidden', role !== 'parent');
+            // Kept for compatibility
         }
 
         window.handleLogin = async () => {
@@ -198,81 +190,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
             }
         }
 
+        // handleRegister is no longer exposed in UI - admin uses adminCreateUser() instead
         window.handleRegister = async () => {
-            const email = document.getElementById('reg-email').value;
-            const pass = document.getElementById('reg-pass').value;
-            const role = document.getElementById('reg-role').value;
-            
-            if (!email || !pass || !role) {
-                Swal.fire('Lỗi', 'Vui lòng điền đầy đủ thông tin', 'error');
-                return;
-            }
-            
-            if (pass.length < 6) {
-                Swal.fire('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự', 'error');
-                return;
-            }
-
-            // Validate role-specific fields
-            if (role === 'teacher') {
-                const teacherClass = document.getElementById('reg-class').value;
-                if (!teacherClass) {
-                    Swal.fire('Lỗi', 'Vui lòng nhập lớp phụ trách (VD: 1A, 2B)', 'error');
-                    return;
-                }
-            } else if (role === 'parent') {
-                const studentId = document.getElementById('reg-student-id').value;
-                if (!studentId) {
-                    Swal.fire('Lỗi', 'Vui lòng nhập mã học sinh của con (VD: HS001, HS002)', 'error');
-                    return;
-                }
-            }
-
-            try {
-                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-                const userData = {
-                    email: email,
-                    role: role,
-                    createdAt: Date.now()
-                };
-                
-                if (role === 'teacher') {
-                    userData.assignedClass = document.getElementById('reg-class').value;
-                } else if (role === 'parent') {
-                    userData.studentId = document.getElementById('reg-student-id').value;
-                }
-                
-                await set(ref(db, `users/${userCred.user.uid}`), userData);
-                
-                // Sign out immediately after registration
-                await signOut(auth);
-                
-                // Reset form and switch to login
-                document.getElementById('form-register').classList.add('hidden');
-                document.getElementById('form-login').classList.remove('hidden');
-                document.getElementById('reg-email').value = '';
-                document.getElementById('reg-pass').value = '';
-                document.getElementById('reg-role').value = '';
-                document.getElementById('reg-class').value = '';
-                document.getElementById('reg-student-id').value = '';
-                
-                // Hide extra fields
-                document.getElementById('reg-class').classList.add('hidden');
-                document.getElementById('reg-student-id').classList.add('hidden');
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Tạo tài khoản thành công!',
-                    text: 'Vui lòng đăng nhập để sử dụng hệ thống.',
-                    confirmButtonText: 'OK'
-                });
-            } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    Swal.fire('Lỗi', 'Email đã được sử dụng', 'error');
-                } else {
-                    Swal.fire('Lỗi', error.message, 'error');
-                }
-            }
+            Swal.fire('Thông báo', 'Đăng ký tài khoản chỉ dành cho Admin. Vui lòng liên hệ quản trị viên.', 'info');
         }
 
         window.handleLogout = async () => {
@@ -617,9 +537,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
             }
             
             const today = new Date().toISOString().split('T')[0];
+            
+            // Build class selector for admin
+            let classSelector = '';
+            if (window.userRole === 'admin') {
+                const allClasses = [...new Set(Object.values(window.localData.students).map(s => s.classRoom || s.class).filter(Boolean))].sort();
+                classSelector = `
+                    <div>
+                        <label>Chọn lớp:</label>
+                        <select id="attendance-class" class="form-control" onchange="loadAttendance()" style="display:inline-block; width:auto; margin-left:10px">
+                            <option value="">-- Chọn lớp --</option>
+                            ${allClasses.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            } else {
+                classSelector = `<div style="font-weight:600; color:var(--primary)">Lớp: ${window.teacherClass}</div>`;
+            }
+
             document.getElementById('content').innerHTML = `
                 <div class="card">
-                    <div style="display:flex; gap:15px; align-items:center; margin-bottom:20px">
+                    <div style="display:flex; gap:15px; align-items:center; margin-bottom:20px; flex-wrap:wrap">
+                        ${classSelector}
                         <div>
                             <label>Chọn ngày:</label>
                             <input type="date" id="attendance-date" class="form-control" value="${today}" 
@@ -628,6 +567,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                         <button class="btn btn-success" onclick="saveAttendance()">
                             <i class="fas fa-save"></i> Lưu điểm danh
                         </button>
+                        <button class="btn btn-primary" onclick="openAttendanceStats()" style="margin-left:auto">
+                            <i class="fas fa-chart-bar"></i> Thống kê điểm danh
+                        </button>
                     </div>
                     
                     <div class="table-wrapper">
@@ -635,6 +577,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                             <thead>
                                 <tr>
                                     <th>STT</th><th>Mã HS</th><th>Họ tên</th>
+                                    ${window.userRole === 'admin' ? '<th>Lớp</th>' : ''}
                                     <th style="text-align:center">Trạng thái</th><th>Ghi chú</th>
                                 </tr>
                             </thead>
@@ -652,11 +595,25 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
             const date = document.getElementById('attendance-date').value;
             let students = Object.values(window.localData.students);
             
-            if (window.userRole === 'teacher') {
-                students = students.filter(x => (x.classRoom === window.teacherClass || x.class === window.teacherClass));
+            // Determine active class
+            let activeClass = window.teacherClass;
+            if (window.userRole === 'admin') {
+                const classEl = document.getElementById('attendance-class');
+                activeClass = classEl ? classEl.value : '';
+                if (!activeClass) {
+                    document.getElementById('attendance-tbody').innerHTML = `
+                        <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:30px">Vui lòng chọn lớp để xem điểm danh</td></tr>
+                    `;
+                    return;
+                }
             }
             
-            const snap = await get(child(ref(db), `attendance/${window.teacherClass || 'all'}/${date}`));
+            if (activeClass) {
+                students = students.filter(x => (x.classRoom === activeClass || x.class === activeClass));
+            }
+            
+            // Admin reads attendance saved by teacher (or by admin for that class)
+            const snap = await get(child(ref(db), `attendance/${activeClass || 'all'}/${date}`));
             const attData = snap.exists() ? snap.val() : {};
             
             let html = '';
@@ -666,6 +623,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                     <td>${i+1}</td>
                     <td>${st.code || st.id}</td>
                     <td>${st.name}</td>
+                    ${window.userRole === 'admin' ? `<td>${st.classRoom || st.class}</td>` : ''}
                     <td style="text-align:center">
                         <select id="att-s-${st.code || st.id}" class="form-control">
                             <option value="present" ${s.status==='present'?'selected':''}>Có mặt</option>
@@ -676,7 +634,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                     <td><input type="text" id="att-n-${st.code || st.id}" class="form-control" value="${s.note||''}"></td>
                 </tr>`;
             });
-            document.getElementById('attendance-tbody').innerHTML = html;
+            document.getElementById('attendance-tbody').innerHTML = html || `<tr><td colspan="6" style="text-align:center; color:#94a3b8">Không có học sinh trong lớp này</td></tr>`;
         }
 
         window.saveAttendance = async () => {
@@ -686,18 +644,35 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                 return;
             }
             
+            // Determine active class
+            let activeClass = window.teacherClass;
+            if (window.userRole === 'admin') {
+                const classEl = document.getElementById('attendance-class');
+                activeClass = classEl ? classEl.value : '';
+                if (!activeClass) {
+                    Swal.fire('Lỗi', 'Vui lòng chọn lớp trước khi lưu', 'warning');
+                    return;
+                }
+            }
+            
             let students = Object.values(window.localData.students);
-            if (window.userRole === 'teacher') {
-                students = students.filter(x => (x.classRoom === window.teacherClass || x.class === window.teacherClass));
+            if (activeClass) {
+                students = students.filter(x => (x.classRoom === activeClass || x.class === activeClass));
             }
             
             const updates = {};
             students.forEach(st => {
                 const id = st.code || st.id;
-                updates[`attendance/${window.teacherClass || 'all'}/${date}/${id}`] = {
-                    status: document.getElementById(`att-s-${id}`).value,
-                    note: document.getElementById(`att-n-${id}`).value
-                };
+                const statusEl = document.getElementById(`att-s-${id}`);
+                const noteEl = document.getElementById(`att-n-${id}`);
+                if (statusEl) {
+                    updates[`attendance/${activeClass || 'all'}/${date}/${id}`] = {
+                        status: statusEl.value,
+                        note: noteEl ? noteEl.value : '',
+                        savedBy: window.userRole,
+                        savedAt: Date.now()
+                    };
+                }
             });
             
             try {
@@ -706,6 +681,235 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
             } catch (error) {
                 Swal.fire('Lỗi', error.message, 'error');
             }
+        }
+
+        // ATTENDANCE STATISTICS
+        window.openAttendanceStats = () => {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            const todayStr = today.toISOString().split('T')[0];
+            
+            document.getElementById('stats-from-date').value = firstDay;
+            document.getElementById('stats-to-date').value = todayStr;
+            
+            // Populate class filter
+            const allClasses = [...new Set(Object.values(window.localData.students).map(s => s.classRoom || s.class).filter(Boolean))].sort();
+            const filterEl = document.getElementById('stats-class-filter');
+            filterEl.innerHTML = '<option value="">Tất cả lớp</option>' + allClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            // If teacher, restrict to own class
+            if (window.userRole === 'teacher' && window.teacherClass) {
+                filterEl.value = window.teacherClass;
+                document.getElementById('stats-class-filter-wrap').style.display = 'none';
+            } else {
+                document.getElementById('stats-class-filter-wrap').style.display = '';
+            }
+            
+            document.getElementById('attendance-stats-result').innerHTML = `
+                <div style="text-align:center; padding:30px; color:#94a3b8">
+                    <i class="fas fa-search" style="font-size:2rem; margin-bottom:10px; display:block"></i>
+                    Chọn khoảng thời gian và nhấn "Thống kê" để xem kết quả
+                </div>
+            `;
+            document.getElementById('modal-attendance-stats').style.display = 'flex';
+        }
+
+        window.loadAttendanceStats = async () => {
+            const fromDate = document.getElementById('stats-from-date').value;
+            const toDate = document.getElementById('stats-to-date').value;
+            const classFilter = document.getElementById('stats-class-filter').value;
+            
+            if (!fromDate || !toDate) {
+                Swal.fire('Lỗi', 'Vui lòng chọn khoảng thời gian', 'warning');
+                return;
+            }
+            if (fromDate > toDate) {
+                Swal.fire('Lỗi', 'Ngày bắt đầu phải trước ngày kết thúc', 'warning');
+                return;
+            }
+            
+            document.getElementById('attendance-stats-result').innerHTML = `
+                <div style="text-align:center; padding:30px">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--primary)"></i>
+                    <p style="margin-top:10px; color:#64748b">Đang tải dữ liệu...</p>
+                </div>
+            `;
+            
+            try {
+                // Get all students
+                let students = Object.values(window.localData.students);
+                if (classFilter) {
+                    students = students.filter(s => (s.classRoom || s.class) === classFilter);
+                }
+                if (window.userRole === 'teacher' && window.teacherClass) {
+                    students = students.filter(s => (s.classRoom || s.class) === window.teacherClass);
+                }
+                
+                // Collect all attendance classes to query
+                const classesToQuery = classFilter 
+                    ? [classFilter]
+                    : [...new Set(students.map(s => s.classRoom || s.class).filter(Boolean))];
+                
+                // Build date range
+                const dateRange = [];
+                const start = new Date(fromDate);
+                const end = new Date(toDate);
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    dateRange.push(d.toISOString().split('T')[0]);
+                }
+                
+                // Load all attendance data for these classes
+                const allAttData = {};
+                for (const cls of classesToQuery) {
+                    const snap = await get(child(ref(db), `attendance/${cls}`));
+                    if (snap.exists()) {
+                        allAttData[cls] = snap.val();
+                    }
+                }
+                
+                // Calculate stats per student
+                const statsPerStudent = students.map(st => {
+                    const stClass = st.classRoom || st.class || '';
+                    const stId = st.code || st.id;
+                    const classData = allAttData[stClass] || {};
+                    
+                    let present = 0, absentP = 0, absentKP = 0, total = 0;
+                    
+                    dateRange.forEach(date => {
+                        const dayData = classData[date];
+                        if (dayData && dayData[stId]) {
+                            total++;
+                            const status = dayData[stId].status;
+                            if (status === 'present') present++;
+                            else if (status === 'p') absentP++;
+                            else if (status === 'kp') absentKP++;
+                        }
+                    });
+                    
+                    const attendanceRate = total > 0 ? Math.round((present / total) * 100) : null;
+                    
+                    return { student: st, present, absentP, absentKP, total, attendanceRate };
+                });
+                
+                // Summary
+                const totalPresent = statsPerStudent.reduce((s, r) => s + r.present, 0);
+                const totalAbsentP = statsPerStudent.reduce((s, r) => s + r.absentP, 0);
+                const totalAbsentKP = statsPerStudent.reduce((s, r) => s + r.absentKP, 0);
+                const highAbsent = statsPerStudent.filter(r => r.absentKP >= 3);
+                
+                // Render result
+                document.getElementById('attendance-stats-result').innerHTML = `
+                    <div class="grid-4" style="margin-bottom:20px">
+                        <div class="stat-card" style="border-left-color:var(--success)">
+                            <div style="color:#64748b; font-size:0.85rem">Tổng buổi có mặt</div>
+                            <div class="value" style="color:var(--success)">${totalPresent}</div>
+                        </div>
+                        <div class="stat-card" style="border-left-color:var(--warning)">
+                            <div style="color:#64748b; font-size:0.85rem">Vắng có phép (P)</div>
+                            <div class="value" style="color:var(--warning)">${totalAbsentP}</div>
+                        </div>
+                        <div class="stat-card" style="border-left-color:var(--danger)">
+                            <div style="color:#64748b; font-size:0.85rem">Vắng không phép (KP)</div>
+                            <div class="value" style="color:var(--danger)">${totalAbsentKP}</div>
+                        </div>
+                        <div class="stat-card" style="border-left-color:#8b5cf6">
+                            <div style="color:#64748b; font-size:0.85rem">HS vắng KP ≥ 3 buổi</div>
+                            <div class="value" style="color:#8b5cf6">${highAbsent.length}</div>
+                        </div>
+                    </div>
+                    
+                    ${highAbsent.length > 0 ? `
+                    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:15px; margin-bottom:20px">
+                        <h4 style="color:#dc2626; margin-bottom:10px">
+                            <i class="fas fa-exclamation-triangle"></i> Học sinh vắng không phép nhiều (≥3 buổi)
+                        </h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px">
+                            ${highAbsent.map(r => `
+                                <span style="background:white; border:1px solid #fecaca; border-radius:20px; padding:4px 12px; font-size:0.85rem">
+                                    ${r.student.name} (${r.student.classRoom || r.student.class}) - ${r.absentKP} buổi KP
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>STT</th><th>Họ tên</th><th>Lớp</th>
+                                    <th style="text-align:center;color:var(--success)">Có mặt</th>
+                                    <th style="text-align:center;color:var(--warning)">Vắng P</th>
+                                    <th style="text-align:center;color:var(--danger)">Vắng KP</th>
+                                    <th style="text-align:center">Tổng ngày</th>
+                                    <th style="text-align:center">Tỉ lệ đi học</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${statsPerStudent.map((r, i) => `
+                                    <tr style="${r.absentKP >= 3 ? 'background:#fff5f5' : ''}">
+                                        <td>${i+1}</td>
+                                        <td style="font-weight:600">${r.student.name}</td>
+                                        <td>${r.student.classRoom || r.student.class || '-'}</td>
+                                        <td style="text-align:center; color:var(--success); font-weight:600">${r.present}</td>
+                                        <td style="text-align:center; color:var(--warning); font-weight:600">${r.absentP}</td>
+                                        <td style="text-align:center; color:var(--danger); font-weight:600">${r.absentKP}${r.absentKP >= 3 ? ' ⚠️' : ''}</td>
+                                        <td style="text-align:center">${r.total}</td>
+                                        <td style="text-align:center">
+                                            ${r.attendanceRate !== null ? `
+                                                <span style="
+                                                    padding:3px 10px; border-radius:20px; font-size:0.85rem; font-weight:600;
+                                                    background:${r.attendanceRate >= 90 ? '#dcfce7' : r.attendanceRate >= 70 ? '#fef9c3' : '#fee2e2'};
+                                                    color:${r.attendanceRate >= 90 ? '#166534' : r.attendanceRate >= 70 ? '#854d0e' : '#991b1b'}
+                                                ">
+                                                    ${r.attendanceRate}%
+                                                </span>
+                                            ` : '<span style="color:#94a3b8">Chưa có</span>'}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:15px; text-align:right">
+                        <button class="btn btn-success" onclick="exportAttendanceStats()">
+                            <i class="fas fa-file-excel"></i> Xuất Excel
+                        </button>
+                    </div>
+                `;
+                
+                // Store for export
+                window._lastAttendanceStats = { statsPerStudent, fromDate, toDate, classFilter };
+                
+            } catch (error) {
+                document.getElementById('attendance-stats-result').innerHTML = `
+                    <div style="text-align:center; padding:30px; color:#dc2626">
+                        <i class="fas fa-exclamation-circle" style="font-size:2rem; margin-bottom:10px; display:block"></i>
+                        Lỗi tải dữ liệu: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        window.exportAttendanceStats = () => {
+            if (!window._lastAttendanceStats) return;
+            const { statsPerStudent, fromDate, toDate, classFilter } = window._lastAttendanceStats;
+            
+            const data = statsPerStudent.map((r, i) => ({
+                'STT': i + 1,
+                'Họ tên': r.student.name,
+                'Lớp': r.student.classRoom || r.student.class || '',
+                'Mã HS': r.student.code || r.student.id,
+                'Có mặt': r.present,
+                'Vắng P': r.absentP,
+                'Vắng KP': r.absentKP,
+                'Tổng ngày': r.total,
+                'Tỉ lệ đi học (%)': r.attendanceRate !== null ? r.attendanceRate : 'Chưa có'
+            }));
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Diem_Danh');
+            XLSX.writeFile(wb, `Thong_Ke_Diem_Danh_${fromDate}_${toDate}${classFilter ? '_' + classFilter : ''}.xlsx`);
         }
 
         // SCORES - CHƯƠNG TRÌNH 2018
@@ -1488,11 +1692,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         // USERS
         function renderUsers() {
             document.getElementById('content').innerHTML = `
-                <div class="card">
-                    <h3>Quản lý Users</h3>
-                    <p style="color:#dc2626; margin-top:10px">
+                <div style="margin-bottom:20px; display:flex; gap:10px; align-items:center">
+                    <button class="btn btn-primary" onclick="openCreateUserModal()">
+                        <i class="fas fa-user-plus"></i> Tạo tài khoản mới
+                    </button>
+                    <div style="margin-left:auto; color:#64748b; font-size:0.85rem">
+                        <i class="fas fa-info-circle"></i> Chỉ admin mới có thể tạo và quản lý tài khoản
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom:15px">
+                    <p style="color:#dc2626; margin:0">
                         <i class="fas fa-exclamation-triangle"></i> 
-                        <strong>Lưu ý:</strong> Xóa user sẽ xóa vĩnh viễn tài khoản trên Firebase Auth. Người dùng sẽ không thể đăng nhập lại.
+                        <strong>Lưu ý:</strong> Xóa user sẽ xóa vĩnh viễn tài khoản. Người dùng sẽ không thể đăng nhập lại.
                     </p>
                 </div>
                 
@@ -1510,6 +1722,128 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                 </div>
             `;
             loadUsers();
+        }
+
+        window.openCreateUserModal = () => {
+            if (window.userRole !== 'admin') {
+                Swal.fire('Từ chối', 'Chỉ Admin mới có quyền tạo tài khoản', 'error');
+                return;
+            }
+            // Reset form
+            document.getElementById('cu-email').value = '';
+            document.getElementById('cu-pass').value = '';
+            document.getElementById('cu-role').value = '';
+            document.getElementById('cu-class').value = '';
+            document.getElementById('cu-student-id').value = '';
+            document.getElementById('cu-class-group').classList.add('hidden');
+            document.getElementById('cu-student-group').classList.add('hidden');
+            document.getElementById('modal-create-user').style.display = 'flex';
+        }
+
+        window.toggleCreateUserFields = () => {
+            const role = document.getElementById('cu-role').value;
+            document.getElementById('cu-class-group').classList.toggle('hidden', role !== 'teacher');
+            document.getElementById('cu-student-group').classList.toggle('hidden', role !== 'parent');
+        }
+
+        window.adminCreateUser = async () => {
+            if (window.userRole !== 'admin') return;
+            
+            const email = document.getElementById('cu-email').value.trim();
+            const pass = document.getElementById('cu-pass').value;
+            const role = document.getElementById('cu-role').value;
+            
+            if (!email || !pass || !role) {
+                Swal.fire('Lỗi', 'Vui lòng điền đầy đủ thông tin', 'warning');
+                return;
+            }
+            if (pass.length < 6) {
+                Swal.fire('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự', 'warning');
+                return;
+            }
+            
+            let assignedClass = '';
+            let studentId = '';
+            
+            if (role === 'teacher') {
+                assignedClass = document.getElementById('cu-class').value.trim();
+                if (!assignedClass) {
+                    Swal.fire('Lỗi', 'Vui lòng nhập lớp phụ trách', 'warning');
+                    return;
+                }
+            } else if (role === 'parent') {
+                studentId = document.getElementById('cu-student-id').value.trim();
+                if (!studentId) {
+                    Swal.fire('Lỗi', 'Vui lòng nhập mã học sinh', 'warning');
+                    return;
+                }
+            }
+            
+            Swal.fire({
+                title: 'Đang tạo tài khoản...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            
+            try {
+                // Save current user info before creating new account
+                const adminEmail = window.currentUser.email;
+                const adminUid = window.currentUser.uid;
+                
+                // Create user with Firebase Auth
+                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                const newUid = userCred.user.uid;
+                
+                const userData = {
+                    email: email,
+                    role: role,
+                    createdAt: Date.now(),
+                    createdBy: adminEmail
+                };
+                if (role === 'teacher') userData.assignedClass = assignedClass;
+                if (role === 'parent') userData.studentId = studentId;
+                
+                await set(ref(db, `users/${newUid}`), userData);
+                
+                // Sign back in as admin immediately
+                await signOut(auth);
+                
+                // Re-login as admin - we need to ask admin to re-enter password
+                // Instead, we'll save admin credentials before creating user
+                // Actually Firebase keeps the admin signed in - let's sign back
+                // The better approach: sign out new user, sign admin back in
+                // We need admin password - prompt admin
+                closeModal('modal-create-user');
+                
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Tạo tài khoản thành công!',
+                    html: `
+                        <div style="text-align:left; background:#f0fdf4; border-radius:8px; padding:15px; margin-top:10px">
+                            <p style="font-weight:600; margin-bottom:10px">Thông tin tài khoản:</p>
+                            <p>📧 <strong>Email:</strong> ${email}</p>
+                            <p>🔑 <strong>Mật khẩu:</strong> ${pass}</p>
+                            <p>👤 <strong>Vai trò:</strong> ${role === 'teacher' ? 'Giáo viên' : role === 'parent' ? 'Phụ huynh' : 'Admin'}${role === 'teacher' ? ` - Lớp ${assignedClass}` : role === 'parent' ? ` - HS ${studentId}` : ''}</p>
+                        </div>
+                        <p style="margin-top:15px; color:#dc2626; font-size:0.85rem">
+                            ⚠️ Vui lòng ghi lại và gửi thông tin này cho người dùng.<br>
+                            Bạn cần đăng nhập lại tài khoản Admin.
+                        </p>
+                    `,
+                    confirmButtonText: 'Đã hiểu, đăng nhập lại'
+                });
+                
+                // Force admin to re-login
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
+                
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    Swal.fire('Lỗi', 'Email này đã được sử dụng', 'error');
+                } else {
+                    Swal.fire('Lỗi', error.message, 'error');
+                }
+            }
         }
 
         window.loadUsers = () => {
@@ -1859,14 +2193,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                             ` : '<p style="color:#94a3b8; margin-top:15px">Chưa có giao dịch tài chính nào</p>'}
                         </div>
 
-
-                        <!-- Thời khóa biểu -->
-                        <div class="card">
-                            <h3><i class="fas fa-calendar-alt"></i> Thời khóa biểu lớp ${student.classRoom || student.class}</h3>
-                            <div id="parent-timetable-container" style="margin-top:15px"></div>
-                        </div>
-
-                                                <!-- Phản hồi từ giáo viên -->
+                        <!-- Phản hồi từ giáo viên -->
                         <div class="card">
                             <h3><i class="fas fa-comments"></i> Phản hồi từ giáo viên</h3>
                             ${feedbacks.length > 0 ? `
@@ -1892,60 +2219,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                             ` : '<p style="color:#94a3b8; margin-top:15px">Chưa có phản hồi nào từ giáo viên</p>'}
                         </div>
                     `;
-                    
-                    // Render timetable for parent
-                    const studentClass = student.classRoom || student.class;
-                    if (studentClass) {
-                        // Use setTimeout to ensure DOM is ready
-                        setTimeout(() => {
-                            const timetableContainer = document.getElementById('parent-timetable-container');
-                            if (timetableContainer) {
-                                const timetableData = window.localData.timetables[studentClass] || {};
-                                const grade = studentClass.charAt(0);
-                                const subjects = window.PRIMARY_SUBJECTS[grade] || [];
-                                
-                                // Get periods
-                                const morningPeriods = window.TIMETABLE_PERIODS.morning || window.DEFAULT_PERIODS.morning;
-                                const afternoonPeriods = window.TIMETABLE_PERIODS.afternoon || window.DEFAULT_PERIODS.afternoon;
-                                const allPeriods = [...morningPeriods, ...afternoonPeriods];
-                                
-                                const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-                                
-                                let html = '<div class="timetable-container"><div class="timetable-grid">';
-                                
-                                // Header row
-                                html += '<div class="timetable-header"></div>';
-                                days.forEach(day => {
-                                    html += `<div class="timetable-header">${day}</div>`;
-                                });
-                                
-                                // Time slots
-                                allPeriods.forEach((period, pIndex) => {
-                                    html += `<div class="timetable-time">${period.name}<br><small>${period.time}</small></div>`;
-                                    
-                                    days.forEach((day, dIndex) => {
-                                        const slotKey = `d${dIndex}_p${pIndex}`;
-                                        const slot = timetableData[slotKey] || {};
-                                        
-                                        if (slot.subject) {
-                                            html += `
-                                                <div class="timetable-cell">
-                                                    <div class="timetable-subject">${slot.subject}</div>
-                                                    ${slot.teacher ? `<div class="timetable-teacher">${slot.teacher}</div>` : ''}
-                                                    ${slot.room ? `<div class="timetable-teacher">Phòng: ${slot.room}</div>` : ''}
-                                                </div>
-                                            `;
-                                        } else {
-                                            html += '<div class="timetable-cell"><span class="empty-slot">---</span></div>';
-                                        }
-                                    });
-                                });
-                                
-                                html += '</div></div>';
-                                timetableContainer.innerHTML = html;
-                            }
-                        }, 100);
-                    }
                 });
             });
         }
@@ -2077,7 +2350,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                 
             } else if (window.userRole === 'parent') {
                 // Parent can only view their child's class
-                if (!window.studentId) {
+                const parentSId = window.parentStudentId;
+                if (!parentSId) {
                     content.innerHTML = '<div class="card"><p>Không tìm thấy thông tin học sinh.</p></div>';
                     return;
                 }
@@ -2085,14 +2359,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
                 let studentClass = null;
                 for (let key in window.localData.students) {
                     const s = window.localData.students[key];
-                    if (s.code === window.studentId || key === window.studentId) {
+                    if (s.code === parentSId || s.id === parentSId || key === parentSId) {
                         studentClass = s.classRoom || s.class;
                         break;
                     }
                 }
                 
                 if (!studentClass) {
-                    content.innerHTML = '<div class="card"><p>Không tìm thấy thông tin lớp học của con bạn.</p></div>';
+                    content.innerHTML = '<div class="card"><p>Không tìm thấy thông tin lớp học của con bạn. Vui lòng liên hệ Admin.</p></div>';
                     return;
                 }
                 
